@@ -1,10 +1,10 @@
-# Maszyny Gliznowo - wdrozenie na Hostingerze
+﻿# Maszyny Gliznowo - wdrozenie na Hostingerze
 
 ## 1. Baza danych
 
 W panelu Hostingera utworz baze MySQL/MariaDB, a potem uruchom SQL z pliku:
 
-`supabase/hostinger_mysql.sql`
+`database/hostinger_mysql.sql`
 
 Tworzy on tabele:
 
@@ -34,15 +34,14 @@ APP_USERS=[{"email":"admin@example.com","password":"haslo1"},{"email":"pracownik
 
 ## 3. Zdjecia
 
-Domyslnie zdjecia zapisuja sie do:
+Zdjecia zapisuja sie do:
 
 `public/uploads/machines`
 
-Jesli Hostinger wymaga innej sciezki zapisu, ustaw:
+Upewnij sie, ze aplikacja Node.js ma prawo zapisu do tego katalogu. Limit pojedynczego zdjecia ustawisz opcjonalnie:
 
 ```env
-UPLOAD_DIR=/pelna/sciezka/do/uploads/machines
-UPLOAD_PUBLIC_PREFIX=/uploads/machines
+MAX_IMAGE_SIZE=5242880
 ```
 
 ## 4. Komendy
@@ -55,7 +54,7 @@ npm run start
 
 ## 5. Co zostalo zmienione
 
-Supabase zostal zastapiony przez:
+Backend aplikacji dziala teraz przez:
 
 - API routes w Next.js: `app/api`
 - MySQL przez `mysql2`

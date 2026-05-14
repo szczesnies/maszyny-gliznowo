@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { logError } from '../lib/logger'
 
 const inputStyle =
   'w-full rounded-xl border border-white/10 bg-[#1b1b1b] px-3 py-2.5 text-[14px] font-medium text-zinc-100 placeholder:text-zinc-500 outline-none transition focus:border-yellow-500/60 focus:bg-[#222] focus:ring-2 focus:ring-yellow-500/10'
@@ -256,7 +257,7 @@ export default function Home() {
       setToast({ type: 'success', message: 'Maszyna została dodana.' })
       await fetchMachines()
     } catch (error) {
-      console.error(error)
+      logError(error, 'home')
       setErrorMessage('Nie udało się zapisać maszyny lub zdjęć.')
       setToast({ type: 'error', message: 'Nie udało się zapisać maszyny lub zdjęć.' })
     } finally {
@@ -324,7 +325,7 @@ export default function Home() {
       setDeleteConfirmName('')
       fetchMachines()
     } catch (error) {
-      console.error(error)
+      logError(error, 'home')
       setErrorMessage('Nie udało się trwale usunąć maszyny.')
       setToast({ type: 'error', message: 'Nie udało się trwale usunąć maszyny.' })
     } finally {
@@ -375,7 +376,7 @@ export default function Home() {
       setToast({ type: 'success', message: 'Szybka edycja zapisana.' })
       await fetchMachines()
     } catch (error) {
-      console.error(error)
+      logError(error, 'home')
       setErrorMessage('Nie udało się zapisać szybkiej edycji.')
       setToast({ type: 'error', message: 'Nie udało się zapisać szybkiej edycji.' })
     } finally {
@@ -768,4 +769,5 @@ export default function Home() {
     </main>
   )
 }
+
 

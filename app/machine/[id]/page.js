@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { logError } from '../../../lib/logger'
 
 const inputStyle =
   'w-full rounded-xl border border-white/10 bg-[#1b1b1b] px-3 py-2.5 text-[14px] font-medium text-zinc-100 placeholder:text-zinc-500 outline-none transition focus:border-yellow-500/60 focus:bg-[#222] focus:ring-2 focus:ring-yellow-500/10'
@@ -30,12 +31,6 @@ function readLocalHistory(machineId) {
   } catch {
     return []
   }
-}
-
-function writeLocalHistory(machineId, entry) {
-  if (typeof window === 'undefined') return
-  const history = readLocalHistory(machineId)
-  window.localStorage.setItem(historyKey(machineId), JSON.stringify([entry, ...history].slice(0, 50)))
 }
 
 function formatDate(value) {
@@ -239,7 +234,7 @@ export default function MachinePage({ params }) {
       setToast({ type: 'success', message: 'Maszyna wróciła do magazynu.' })
       await fetchMachine()
     } catch (error) {
-      console.error(error)
+      logError(error, 'machine')
       setErrorMessage('Nie udało się przywrócić maszyny z archiwum.')
       setToast({ type: 'error', message: 'Nie udało się przywrócić maszyny.' })
     } finally {
@@ -263,7 +258,7 @@ export default function MachinePage({ params }) {
       setToast({ type: 'success', message: 'Maszyna została przeniesiona do archiwum.' })
       await fetchMachine()
     } catch (error) {
-      console.error(error)
+      logError(error, 'machine')
       setErrorMessage('Nie udało się przenieść maszyny do archiwum.')
       setToast({ type: 'error', message: 'Nie udało się przenieść maszyny do archiwum.' })
     } finally {
@@ -375,7 +370,7 @@ export default function MachinePage({ params }) {
       setToast({ type: 'success', message: 'Zmiany zostały zapisane.' })
       await fetchMachine()
     } catch (error) {
-      console.error(error)
+      logError(error, 'machine')
       setErrorMessage('Nie udało się zapisać zmian lub zdjęć.')
       setToast({ type: 'error', message: 'Nie udało się zapisać zmian lub zdjęć.' })
     } finally {
@@ -660,5 +655,6 @@ export default function MachinePage({ params }) {
     </main>
   )
 }
+
 
 
