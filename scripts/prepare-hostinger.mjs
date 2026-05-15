@@ -10,6 +10,7 @@ const standaloneNextStaticDir = join(standaloneDir, '.next', 'static')
 const standalonePublicDir = join(standaloneDir, 'public')
 const hostingerPublicHtmlDir = join(root, '..', 'public_html')
 const hostingerNextStaticDir = join(hostingerPublicHtmlDir, '_next', 'static')
+const hostingerStaticDir = join(hostingerPublicHtmlDir, 'static')
 
 function copyDirectory(from, to) {
   if (!existsSync(from)) return false
@@ -24,6 +25,7 @@ copyDirectory(publicDir, standalonePublicDir)
 
 if (existsSync(hostingerPublicHtmlDir)) {
   copyDirectory(nextStaticDir, hostingerNextStaticDir)
+  copyDirectory(nextStaticDir, hostingerStaticDir)
   copyDirectory(publicDir, hostingerPublicHtmlDir)
 }
 
