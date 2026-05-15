@@ -10,6 +10,7 @@ export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -42,8 +43,25 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-3">
-          <input className={inputStyle} placeholder="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
-          <input className={inputStyle} placeholder="Hasło" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+          <input className={inputStyle} placeholder="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" />
+          <div className="relative">
+            <input
+              className={`${inputStyle} pr-24`}
+              placeholder="Hasło"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((value) => !value)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[12px] font-bold text-zinc-200 transition hover:border-yellow-500/40 hover:bg-yellow-500/10 hover:text-yellow-200"
+              aria-label={showPassword ? 'Ukryj hasło' : 'Pokaż hasło'}
+            >
+              {showPassword ? 'UKRYJ' : 'POKAŻ'}
+            </button>
+          </div>
 
           {errorMessage && <p className="rounded-2xl border border-red-500/30 bg-red-950/50 p-3 text-center text-sm font-semibold text-red-200">{errorMessage}</p>}
 

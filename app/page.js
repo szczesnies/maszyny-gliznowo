@@ -34,14 +34,15 @@ function quickEditHistoryDetails(machine, updates) {
   const changes = [
     ['Nazwa', machine.name, updates.name],
     ['Indeks', machine.index_number, updates.index_number],
-    ['Cena kupna', machine.purchase_price, updates.purchase_price],
-    ['Cena netto', machine.vat_price, updates.vat_price],
-    ['Cena brutto', machine.gross_price, updates.gross_price],
+    ['Cena zakupu', machine.purchase_price, updates.purchase_price],
+    ['VAT', machine.vat_price, updates.vat_price],
+    ['Cena', machine.gross_price, updates.gross_price],
   ]
     .filter(([, before, after]) => String(before || '') !== String(after || ''))
     .map(([label, before, after]) => {
-      const oldValue = label.startsWith('Cena') ? priceLabel(before) : before || '-'
-      const newValue = label.startsWith('Cena') ? priceLabel(after) : after || '-'
+      const isPrice = ['Cena zakupu', 'VAT', 'Cena'].includes(label)
+      const oldValue = isPrice ? priceLabel(before) : before || '-'
+      const newValue = isPrice ? priceLabel(after) : after || '-'
       return `${label} zmieniono z ${oldValue} na ${newValue}.`
     })
 
@@ -123,13 +124,27 @@ export default function Home() {
   )
 
   useEffect(() => {
+    let cancelled = false
+
     async function init() {
-      const response = await fetch('/api/auth/check')
-      if (!response.ok) {
-        router.push('/login')
-        return
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 8000)
+
+      try {
+        const response = await fetch('/api/auth/check', { cache: 'no-store', signal: controller.signal })
+        if (cancelled) return
+
+        if (!response.ok) {
+          router.replace('/login')
+          return
+        }
+
+        setLoading(false)
+      } catch {
+        if (!cancelled) router.replace('/login')
+      } finally {
+        clearTimeout(timeout)
       }
-      setLoading(false)
     }
 
     init()
@@ -142,11 +157,15 @@ export default function Home() {
         })
       }
     }
+    return () => {
+      cancelled = true
+    }
   }, [router])
 
   useEffect(() => {
+    if (loading) return
     fetchMachines()
-  }, [view])
+  }, [loading, view])
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -194,26 +213,32 @@ export default function Home() {
 
   async function fetchMachines() {
     setMachinesLoading(true)
-    const status = view === 'active' ? 'available' : 'sold'
-    const response = await fetch(`/api/machines?status=${encodeURIComponent(status)}`)
 
-    if (response.status === 401) {
-      router.push('/login')
-      setMachinesLoading(false)
-      return
-    }
+    try {
+      const status = view === 'active' ? 'available' : 'sold'
+      const response = await fetch(`/api/machines?status=${encodeURIComponent(status)}`, { cache: 'no-store' })
 
-    if (!response.ok) {
+      if (response.status === 401) {
+        router.push('/login')
+        return
+      }
+
+      if (!response.ok) {
+        setErrorMessage('Nie udało się pobrać maszyn.')
+        setMachines([])
+        return
+      }
+
+      const data = await response.json()
+      setErrorMessage('')
+      setMachines(data.machines || [])
+    } catch (error) {
+      logError(error, 'fetchMachines')
       setErrorMessage('Nie udało się pobrać maszyn.')
       setMachines([])
+    } finally {
       setMachinesLoading(false)
-      return
     }
-
-    const data = await response.json()
-    setErrorMessage('')
-    setMachines(data.machines || [])
-    setMachinesLoading(false)
   }
 
   function resetForm() {
@@ -501,8 +526,8 @@ export default function Home() {
                 <option value="newest">Sortuj: najnowsze</option>
                 <option value="name">Sortuj: nazwa</option>
                 <option value="index">Sortuj: indeks</option>
-                <option value="gross-desc">Cena brutto malejąco</option>
-                <option value="gross-asc">Cena brutto rosnąco</option>
+                <option value="gross-desc">Cena malejąco</option>
+                <option value="gross-asc">Cena rosnąco</option>
               </select>
               <select className={selectStyle} value={qualityFilter} onChange={(event) => setQualityFilter(event.target.value)}>
                 <option value="all">Filtr: wszystko</option>
@@ -555,9 +580,9 @@ export default function Home() {
               <div className="rounded-2xl border border-white/5 bg-[#202020] p-3">
                 <p className="mb-3 text-xs font-bold uppercase text-zinc-500">Ceny</p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <input className={inputStyle} placeholder="Cena kupna" value={purchasePrice} onChange={(event) => setPurchasePrice(event.target.value)} />
-                  <input className={inputStyle} placeholder="Cena netto" value={vatPrice} onChange={(event) => setVatPrice(event.target.value)} />
-                  <input className={inputStyle} placeholder="Cena brutto" value={grossPrice} onChange={(event) => setGrossPrice(event.target.value)} />
+                  <input className={inputStyle} placeholder="Cena zakupu" value={purchasePrice} onChange={(event) => setPurchasePrice(event.target.value)} />
+                  <input className={inputStyle} placeholder="VAT" value={vatPrice} onChange={(event) => setVatPrice(event.target.value)} />
+                  <input className={inputStyle} placeholder="Cena" value={grossPrice} onChange={(event) => setGrossPrice(event.target.value)} />
                 </div>
               </div>
 
@@ -605,9 +630,9 @@ export default function Home() {
                   <tr>
                     <th className="px-3 py-3"><button onClick={() => setSortMode('name')} className="text-left font-bold uppercase text-zinc-500 transition hover:text-yellow-400">Maszyna{tableSortLabel('name')}</button></th>
                     <th className="px-3 py-3"><button onClick={() => setSortMode('index')} className="text-left font-bold uppercase text-zinc-500 transition hover:text-yellow-400">Indeks{tableSortLabel('index')}</button></th>
-                    <th className="px-3 py-3">Kupno</th>
-                    <th className="px-3 py-3">Netto</th>
-                    <th className="px-3 py-3"><button onClick={toggleGrossSort} className="text-left font-bold uppercase text-zinc-500 transition hover:text-yellow-400">Brutto{tableSortLabel('gross-desc')}</button></th>
+                    <th className="px-3 py-3">Cena zakupu</th>
+                    <th className="px-3 py-3">VAT</th>
+                    <th className="px-3 py-3"><button onClick={toggleGrossSort} className="text-left font-bold uppercase text-zinc-500 transition hover:text-yellow-400">Cena{tableSortLabel('gross-desc')}</button></th>
                     <th className="px-3 py-3">Notatka</th>
                     <th className="px-3 py-3 text-right">Akcje</th>
                   </tr>
@@ -638,13 +663,13 @@ export default function Home() {
                         )}
                       </td>
                       <td className="px-3 py-3 font-semibold text-zinc-200">
-                        {quickEditing ? <input className={`${inputStyle} w-28`} value={quickPurchasePrice} onClick={(event) => event.stopPropagation()} onChange={(event) => setQuickPurchasePrice(event.target.value)} placeholder="Kupno" /> : formatPrice(machine.purchase_price)}
+                        {quickEditing ? <input className={`${inputStyle} w-28`} value={quickPurchasePrice} onClick={(event) => event.stopPropagation()} onChange={(event) => setQuickPurchasePrice(event.target.value)} placeholder="Cena zakupu" /> : formatPrice(machine.purchase_price)}
                       </td>
                       <td className="px-3 py-3 font-semibold text-zinc-200">
-                        {quickEditing ? <input className={`${inputStyle} w-28`} value={quickVatPrice} onClick={(event) => event.stopPropagation()} onChange={(event) => setQuickVatPrice(event.target.value)} placeholder="Netto" /> : formatPrice(machine.vat_price)}
+                        {quickEditing ? <input className={`${inputStyle} w-28`} value={quickVatPrice} onClick={(event) => event.stopPropagation()} onChange={(event) => setQuickVatPrice(event.target.value)} placeholder="VAT" /> : formatPrice(machine.vat_price)}
                       </td>
                       <td className="px-3 py-3 font-bold text-yellow-400">
-                        {quickEditing ? <input className={`${inputStyle} w-28`} value={quickGrossPrice} onClick={(event) => event.stopPropagation()} onChange={(event) => setQuickGrossPrice(event.target.value)} placeholder="Brutto" /> : formatPrice(machine.gross_price)}
+                        {quickEditing ? <input className={`${inputStyle} w-28`} value={quickGrossPrice} onClick={(event) => event.stopPropagation()} onChange={(event) => setQuickGrossPrice(event.target.value)} placeholder="Cena" /> : formatPrice(machine.gross_price)}
                       </td>
                       <td className="max-w-[280px] px-3 py-3 text-zinc-300">
                         {quickEditing ? (
@@ -698,18 +723,18 @@ export default function Home() {
                   <h2 className="mb-2 min-h-8 break-words text-[13px] font-semibold leading-snug text-white">{machine.name || 'Bez nazwy'}</h2>
                   <div className="mb-3 rounded-xl border border-white/5 bg-[#202020] p-2">
                     <div className="grid grid-cols-3 gap-1.5">
-                      <div className="rounded-xl bg-[#181818] p-2"><p className="text-[10px] font-semibold uppercase text-zinc-500">Kupno</p><p className="break-words text-[12px] font-semibold text-zinc-100">{formatPrice(machine.purchase_price)}</p></div>
-                      <div className="rounded-xl bg-[#181818] p-2"><p className="text-[10px] font-semibold uppercase text-zinc-500">Netto</p><p className="break-words text-[12px] font-semibold text-zinc-100">{formatPrice(machine.vat_price)}</p></div>
-                      <div className="rounded-xl bg-yellow-500 p-2 text-black shadow-inner shadow-yellow-700/20"><p className="text-[10px] font-bold uppercase text-black/60">Brutto</p><p className="break-words text-[12px] font-bold">{formatPrice(machine.gross_price)}</p></div>
+                      <div className="rounded-xl bg-[#181818] p-2"><p className="text-[10px] font-semibold uppercase text-zinc-500">Cena zakupu</p><p className="break-words text-[12px] font-semibold text-zinc-100">{formatPrice(machine.purchase_price)}</p></div>
+                      <div className="rounded-xl bg-[#181818] p-2"><p className="text-[10px] font-semibold uppercase text-zinc-500">VAT</p><p className="break-words text-[12px] font-semibold text-zinc-100">{formatPrice(machine.vat_price)}</p></div>
+                      <div className="rounded-xl bg-yellow-500 p-2 text-black shadow-inner shadow-yellow-700/20"><p className="text-[10px] font-bold uppercase text-black/60">Cena</p><p className="break-words text-[12px] font-bold">{formatPrice(machine.gross_price)}</p></div>
                     </div>
                   </div>
 
                   {quickEditing ? (
                     <div className="mb-3 space-y-2" onClick={(event) => event.stopPropagation()}>
                       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                        <input className={inputStyle} placeholder="Cena kupna" value={quickPurchasePrice} onChange={(event) => setQuickPurchasePrice(event.target.value)} />
-                        <input className={inputStyle} placeholder="Cena netto" value={quickVatPrice} onChange={(event) => setQuickVatPrice(event.target.value)} />
-                        <input className={inputStyle} placeholder="Cena brutto" value={quickGrossPrice} onChange={(event) => setQuickGrossPrice(event.target.value)} />
+                        <input className={inputStyle} placeholder="Cena zakupu" value={quickPurchasePrice} onChange={(event) => setQuickPurchasePrice(event.target.value)} />
+                        <input className={inputStyle} placeholder="VAT" value={quickVatPrice} onChange={(event) => setQuickVatPrice(event.target.value)} />
+                        <input className={inputStyle} placeholder="Cena" value={quickGrossPrice} onChange={(event) => setQuickGrossPrice(event.target.value)} />
                       </div>
                       <textarea className={`${inputStyle} h-20 resize-none`} placeholder="Notatka" value={quickNote} onChange={(event) => setQuickNote(event.target.value)} />
                     </div>
@@ -793,5 +818,6 @@ export default function Home() {
     </main>
   )
 }
+
 
 

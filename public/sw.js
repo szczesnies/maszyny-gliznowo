@@ -1,5 +1,5 @@
-﻿const CACHE_NAME = 'maszyny-gliznowo-v1'
-const STATIC_ASSETS = ['/', '/manifest.json', '/icon-192.png', '/icon-512.png', '/banner.png']
+const CACHE_NAME = 'maszyny-gliznowo-v2'
+const STATIC_ASSETS = ['/manifest.json', '/icon-192.png', '/icon-512.png', '/banner.png']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -22,15 +22,23 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const request = event.request
   if (request.method !== 'GET') return
-  if (new URL(request.url).hostname.includes('supabase.co')) return
+
+  const url = new URL(request.url)
+  if (url.origin !== self.location.origin) return
+  if (url.pathname.startsWith('/api/')) return
+  if (request.mode === 'navigate') return
 
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        const copy = response.clone()
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy))
+    caches.match(request).then((cached) => {
+      if (cached) return cached
+
+      return fetch(request).then((response) => {
+        if (response.ok) {
+          const copy = response.clone()
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy))
+        }
         return response
       })
-      .catch(() => caches.match(request))
+    })
   )
 })

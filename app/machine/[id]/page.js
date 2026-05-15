@@ -326,9 +326,9 @@ export default function MachinePage({ params }) {
     return [
       ['Nazwa', machine.name, updateData.name],
       ['Indeks', machine.index_number, updateData.index_number],
-      ['Cena kupna', machine.purchase_price, updateData.purchase_price],
-      ['Cena netto', machine.vat_price, updateData.vat_price],
-      ['Cena brutto', machine.gross_price, updateData.gross_price],
+      ['Cena zakupu', machine.purchase_price, updateData.purchase_price],
+      ['VAT', machine.vat_price, updateData.vat_price],
+      ['Cena', machine.gross_price, updateData.gross_price],
       ['Opis', machine.description, updateData.description],
       ['Notatka', machine.note, updateData.note],
     ]
@@ -468,9 +468,9 @@ export default function MachinePage({ params }) {
                   <input value={editName} onChange={(event) => setEditName(event.target.value)} className={inputStyle} placeholder="Nazwa" />
                   <input value={editIndexNumber} onChange={(event) => setEditIndexNumber(event.target.value)} className={inputStyle} placeholder="Numer indeksu" />
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <input value={editPurchasePrice} onChange={(event) => setEditPurchasePrice(event.target.value)} className={inputStyle} placeholder="Cena kupna" />
-                    <input value={editVatPrice} onChange={(event) => setEditVatPrice(event.target.value)} className={inputStyle} placeholder="Cena netto" />
-                    <input value={editGrossPrice} onChange={(event) => setEditGrossPrice(event.target.value)} className={inputStyle} placeholder="Cena brutto" />
+                    <input value={editPurchasePrice} onChange={(event) => setEditPurchasePrice(event.target.value)} className={inputStyle} placeholder="Cena zakupu" />
+                    <input value={editVatPrice} onChange={(event) => setEditVatPrice(event.target.value)} className={inputStyle} placeholder="VAT" />
+                    <input value={editGrossPrice} onChange={(event) => setEditGrossPrice(event.target.value)} className={inputStyle} placeholder="Cena" />
                   </div>
                   <textarea value={editDescription} onChange={(event) => setEditDescription(event.target.value)} className={`${inputStyle} h-28 resize-none`} placeholder="Opis" />
                   <textarea value={editNote} onChange={(event) => setEditNote(event.target.value)} className={`${inputStyle} h-20 resize-none`} placeholder="Notatka" />
@@ -599,9 +599,9 @@ export default function MachinePage({ params }) {
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-white/5 bg-[#202020] p-3"><p className="text-[11px] font-semibold uppercase text-zinc-500">Cena kupna</p><p className="break-words text-[17px] font-semibold text-white">{formatPrice(machine.purchase_price)}</p></div>
-                    <div className="rounded-2xl border border-white/5 bg-[#202020] p-3"><p className="text-[11px] font-semibold uppercase text-zinc-500">Cena netto</p><p className="break-words text-[17px] font-semibold text-white">{formatPrice(machine.vat_price)}</p></div>
-                    <div className="rounded-2xl bg-yellow-500 p-3 text-black shadow-inner shadow-yellow-700/20"><p className="text-[11px] font-bold uppercase text-black/60">Cena brutto</p><p className="break-words text-[19px] font-bold">{formatPrice(machine.gross_price)}</p></div>
+                    <div className="rounded-2xl border border-white/5 bg-[#202020] p-3"><p className="text-[11px] font-semibold uppercase text-zinc-500">Cena zakupu</p><p className="break-words text-[17px] font-semibold text-white">{formatPrice(machine.purchase_price)}</p></div>
+                    <div className="rounded-2xl border border-white/5 bg-[#202020] p-3"><p className="text-[11px] font-semibold uppercase text-zinc-500">VAT</p><p className="break-words text-[17px] font-semibold text-white">{formatPrice(machine.vat_price)}</p></div>
+                    <div className="rounded-2xl bg-yellow-500 p-3 text-black shadow-inner shadow-yellow-700/20"><p className="text-[11px] font-bold uppercase text-black/60">Cena</p><p className="break-words text-[19px] font-bold">{formatPrice(machine.gross_price)}</p></div>
                   </div>
                   <div className="rounded-2xl border border-white/5 bg-[#202020] p-4"><h2 className="mb-2 text-[15px] font-semibold text-yellow-400">Opis</h2><p className="whitespace-pre-line break-words text-[14px] leading-6 text-zinc-200">{machine.description || 'Brak opisu'}</p></div>
                   <div className="rounded-2xl border border-white/5 bg-[#202020] p-4"><h2 className="mb-2 text-[15px] font-semibold text-yellow-400">Notatka</h2><p className="whitespace-pre-line break-words text-[14px] leading-6 text-zinc-200">{machine.note || 'Brak notatki'}</p></div>
@@ -673,6 +673,7 @@ export default function MachinePage({ params }) {
     </main>
   )
 }
+
 
 
 
