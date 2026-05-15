@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { logError } from '../../../lib/logger'
+import { compressImageFile } from '../../../lib/imageCompression'
 
 const inputStyle =
   'w-full rounded-xl border border-white/10 bg-[#1b1b1b] px-3 py-2.5 text-[14px] font-medium text-zinc-100 placeholder:text-zinc-500 outline-none transition focus:border-yellow-500/60 focus:bg-[#222] focus:ring-2 focus:ring-yellow-500/10'
@@ -266,18 +267,35 @@ export default function MachinePage({ params }) {
     }
   }
 
-  function setSlotImage(index, file) {
-    setEditImageSlots((current) => {
-      const next = [...current]
-      next[index] = file || null
-      return next
-    })
-    if (file) {
+  async function setSlotImage(index, file) {
+    if (!file) {
+      setEditImageSlots((current) => {
+        const next = [...current]
+        next[index] = null
+        return next
+      })
+      return
+    }
+
+    try {
+      setUploadStatus(`Kompresowanie zdjęcia ${index + 1}...`)
+      const compressed = await compressImageFile(file)
+      setEditImageSlots((current) => {
+        const next = [...current]
+        next[index] = compressed
+        return next
+      })
       setDeleteImageSlots((current) => {
         const next = [...current]
         next[index] = false
         return next
       })
+      const savedMb = file.size - compressed.size
+      setUploadStatus(savedMb > 0 ? `Zdjęcie ${index + 1} zmniejszone o ${(savedMb / 1024 / 1024).toFixed(1)} MB.` : `Zdjęcie ${index + 1} gotowe do wysłania.`)
+    } catch (error) {
+      logError(error, 'compressSlotImage')
+      setToast({ type: 'error', message: 'Nie udało się przygotować zdjęcia.' })
+      setUploadStatus('')
     }
   }
 

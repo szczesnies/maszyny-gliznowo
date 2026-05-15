@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { logError } from '../lib/logger'
+import { compressImageFiles } from '../lib/imageCompression'
 
 const inputStyle =
   'w-full rounded-xl border border-white/10 bg-[#1b1b1b] px-3 py-2.5 text-[14px] font-medium text-zinc-100 placeholder:text-zinc-500 outline-none transition focus:border-yellow-500/60 focus:bg-[#222] focus:ring-2 focus:ring-yellow-500/10'
@@ -266,6 +267,29 @@ export default function Home() {
     }
   }
 
+  async function handleImagesChange(event) {
+    const files = Array.from(event.target.files || []).slice(0, 4)
+    if (files.length === 0) {
+      setImages([])
+      return
+    }
+
+    try {
+      setUploadStatus('Kompresowanie zdjęć...')
+      const compressed = await compressImageFiles(files, (current, total) => {
+        setUploadStatus(`Kompresowanie zdjęć ${current}/${total}...`)
+      })
+      setImages(compressed)
+      const savedMb = files.reduce((sum, file) => sum + file.size, 0) - compressed.reduce((sum, file) => sum + file.size, 0)
+      setUploadStatus(savedMb > 0 ? `Zdjęcia zmniejszone o ${(savedMb / 1024 / 1024).toFixed(1)} MB.` : 'Zdjęcia gotowe do wysłania.')
+    } catch (error) {
+      logError(error, 'compressAddImages')
+      setToast({ type: 'error', message: 'Nie udało się przygotować zdjęć.' })
+      setUploadStatus('')
+      setImages([])
+    }
+  }
+
   async function moveToArchive(machine) {
     const response = await fetch(`/api/machines/${machine.id}`, {
       method: 'PATCH',
@@ -459,8 +483,8 @@ export default function Home() {
         </div>
       )}
       <div className="mx-auto max-w-[1500px] px-3 pb-8 pt-3 sm:px-5 lg:px-6">
-        <div className="mb-4 overflow-hidden rounded-2xl border border-yellow-500/35 bg-[#181818] shadow-2xl shadow-black/45 ring-1 ring-white/5">
-          <img src="/banner.png" alt="Maszyny Gliznowo" loading="eager" className="h-48 w-full object-cover object-center brightness-110 contrast-110 saturate-110 sm:h-56 lg:h-64" />
+        <div className="mb-4 overflow-hidden rounded-2xl border border-yellow-500/35 bg-[#0b0b0b] shadow-2xl shadow-black/45 ring-1 ring-white/5">
+          <img src="/banner.png" alt="Maszyny Gliznowo" loading="eager" className="h-auto max-h-56 min-h-28 w-full object-contain object-center brightness-110 contrast-110 saturate-110 sm:h-56 sm:max-h-none sm:object-cover lg:h-64" />
         </div>
 
         <section className="mb-4 rounded-2xl border border-yellow-500/15 bg-[#171717]/95 p-3 shadow-lg shadow-black/25 sm:p-4">
@@ -539,7 +563,7 @@ export default function Home() {
 
               <div className="rounded-2xl border border-white/5 bg-[#202020] p-3">
                 <p className="mb-3 text-xs font-bold uppercase text-zinc-500">{'Zdjęcia'}</p>
-                <input type="file" multiple accept="image/*" className={inputStyle} onChange={(event) => setImages(Array.from(event.target.files || []).slice(0, 4))} />
+                <input type="file" multiple accept="image/*" className={inputStyle} onChange={handleImagesChange} />
                 {images.length > 0 && <p className="mt-2 text-xs font-bold text-yellow-400">Wybrano: {images.length}/4</p>}
                 {imagePreviews.length > 0 && (
                   <div className="mt-3 grid grid-cols-4 gap-2">
