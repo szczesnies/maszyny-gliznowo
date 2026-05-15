@@ -15,8 +15,12 @@ function loadHomePreferences() {
   if (typeof window === 'undefined') return {}
 
   try {
-    return JSON.parse(window.localStorage.getItem(preferencesKey) || '{}')
+    const parsed = JSON.parse(window.localStorage.getItem(preferencesKey) || '{}')
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
   } catch {
+    try {
+      window.localStorage.removeItem(preferencesKey)
+    } catch {}
     return {}
   }
 }
@@ -150,7 +154,10 @@ export default function Home() {
     init()
     if ('serviceWorker' in navigator) {
       if (process.env.NODE_ENV === 'production') {
-        navigator.serviceWorker.register('/sw.js').catch(() => {})
+        navigator.serviceWorker
+          .register('/sw.js')
+          .then((registration) => registration.update().catch(() => {}))
+          .catch(() => {})
       } else {
         navigator.serviceWorker.getRegistrations().then((registrations) => {
           registrations.forEach((registration) => registration.unregister())
@@ -168,10 +175,12 @@ export default function Home() {
   }, [loading, view])
 
   useEffect(() => {
-    window.localStorage.setItem(
-      preferencesKey,
-      JSON.stringify({ view, search, searchPrice, sortMode, qualityFilter, listMode })
-    )
+    try {
+      window.localStorage.setItem(
+        preferencesKey,
+        JSON.stringify({ view, search, searchPrice, sortMode, qualityFilter, listMode })
+      )
+    } catch {}
   }, [view, search, searchPrice, sortMode, qualityFilter, listMode])
 
   useEffect(() => {

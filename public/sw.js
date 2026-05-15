@@ -1,11 +1,11 @@
-const CACHE_NAME = 'maszyny-gliznowo-v2'
+const CACHE_NAME = 'maszyny-gliznowo-v3'
 const STATIC_ASSETS = ['/manifest.json', '/icon-192.png', '/icon-512.png', '/banner.png']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then((cache) => cache.addAll(STATIC_ASSETS).catch(() => undefined))
       .then(() => self.skipWaiting())
   )
 })
@@ -38,7 +38,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy))
         }
         return response
-      })
+      }).catch(() => cached || Response.error())
     })
   )
 })
