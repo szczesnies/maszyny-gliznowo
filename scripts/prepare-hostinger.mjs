@@ -12,9 +12,9 @@ const hostingerPublicHtmlDir = join(root, '..', 'public_html')
 const hostingerNextStaticDir = join(hostingerPublicHtmlDir, '_next', 'static')
 const hostingerStaticDir = join(hostingerPublicHtmlDir, 'static')
 
-function copyDirectory(from, to) {
+function copyDirectory(from, to, { clean = true } = {}) {
   if (!existsSync(from)) return false
-  rmSync(to, { recursive: true, force: true })
+  if (clean) rmSync(to, { recursive: true, force: true })
   mkdirSync(dirname(to), { recursive: true })
   cpSync(from, to, { recursive: true })
   return true
@@ -24,9 +24,9 @@ copyDirectory(nextStaticDir, standaloneNextStaticDir)
 copyDirectory(publicDir, standalonePublicDir)
 
 if (existsSync(hostingerPublicHtmlDir)) {
-  copyDirectory(nextStaticDir, hostingerNextStaticDir)
-  copyDirectory(nextStaticDir, hostingerStaticDir)
-  copyDirectory(publicDir, hostingerPublicHtmlDir)
+  copyDirectory(nextStaticDir, hostingerNextStaticDir, { clean: false })
+  copyDirectory(nextStaticDir, hostingerStaticDir, { clean: false })
+  copyDirectory(publicDir, hostingerPublicHtmlDir, { clean: false })
 }
 
 console.log('Hostinger static assets prepared.')
