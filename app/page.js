@@ -109,6 +109,7 @@ export default function Home() {
   const [machinesLoading, setMachinesLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
+  const [authError, setAuthError] = useState('')
   const [quickEditId, setQuickEditId] = useState(null)
   const [quickName, setQuickName] = useState('')
   const [quickIndexNumber, setQuickIndexNumber] = useState('')
@@ -132,20 +133,27 @@ export default function Home() {
 
     async function init() {
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 8000)
+      const timeout = setTimeout(() => controller.abort(), 6000)
 
       try {
-        const response = await fetch('/api/auth/check', { cache: 'no-store', signal: controller.signal })
+        const response = await fetch('/api/auth/check', {
+          cache: 'no-store',
+          credentials: 'same-origin',
+          signal: controller.signal,
+        })
         if (cancelled) return
 
         if (!response.ok) {
-          router.replace('/login')
+          window.location.replace('/login')
           return
         }
 
         setLoading(false)
       } catch {
-        if (!cancelled) router.replace('/login')
+        if (!cancelled) {
+          setAuthError('Nie udało się sprawdzić logowania. Zaloguj się ponownie.')
+          setLoading(false)
+        }
       } finally {
         clearTimeout(timeout)
       }
@@ -153,16 +161,9 @@ export default function Home() {
 
     init()
     if ('serviceWorker' in navigator) {
-      if (process.env.NODE_ENV === 'production') {
-        navigator.serviceWorker
-          .register('/sw.js')
-          .then((registration) => registration.update().catch(() => {}))
-          .catch(() => {})
-      } else {
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-          registrations.forEach((registration) => registration.unregister())
-        })
-      }
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => registration.unregister())
+      }).catch(() => {})
     }
     return () => {
       cancelled = true
@@ -502,7 +503,25 @@ export default function Home() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#0f0f0f] text-white">
-        <p className="text-lg font-semibold text-yellow-400">Ładowanie systemu...</p>
+        <div className="rounded-2xl border border-yellow-500/20 bg-[#181818] p-6 text-center shadow-2xl shadow-black/40">
+          <p className="text-lg font-semibold text-yellow-400">Ładowanie systemu...</p>
+          <p className="mt-2 text-sm text-zinc-500">Sprawdzanie logowania</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (authError) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#0f0f0f] p-4 text-white">
+        <div className="w-full max-w-md rounded-2xl border border-yellow-500/20 bg-[#181818] p-6 text-center shadow-2xl shadow-black/40">
+          <p className="text-[12px] font-bold uppercase text-yellow-400">Sesja</p>
+          <h1 className="mt-2 text-2xl font-semibold">Trzeba zalogować się ponownie</h1>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">{authError}</p>
+          <button onClick={() => window.location.replace('/login')} className="mt-5 w-full rounded-xl bg-yellow-500 px-4 py-3 text-sm font-bold text-black transition hover:bg-yellow-400">
+            PRZEJDŹ DO LOGOWANIA
+          </button>
+        </div>
       </main>
     )
   }
